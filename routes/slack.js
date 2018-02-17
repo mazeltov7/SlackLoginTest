@@ -31,8 +31,4 @@ router.get('/auth/redirect', function(req, res, next) {
 
 
 
-
-
-
-
 module.exports = router;

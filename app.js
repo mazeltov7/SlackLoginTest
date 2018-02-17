@@ -5,6 +5,12 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
+const session = require('express-session');
+const Sequelize = require('sequelize');
+var env = process.env.NODE_ENV || 'development';
+var config = require(__dirname + '/config/config.json')[env];
+
+
 var index = require('./routes/index');
 var users = require('./routes/users');
 var slack = require('./routes/slack');
@@ -14,6 +20,36 @@ var app = express();
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
+
+
+// session系
+const SequelizeStore = require('connect-session-sequelize')(session.Store);
+if (config.use_env_variable) {
+	var sequelize = new Sequelize(process.env[config.use_env_variable]);
+} else {
+	var sequelize = new Sequelize(config.database, config.username, config.password, config);
+}
+
+var Session = sequelize.define('Sessions', {
+	sid: {
+		type: Sequelize.STRING,
+		primaryKey: true
+	},
+	expires: Sequelize.DATE,
+	data: Sequelize.STRING
+});
+
+app.use(session({
+	secret: 'hoge',
+	store: new SequelizeStore({
+		db: sequelize,
+		host: 'localhost',
+		table: 'Sessions'
+	}),
+	resave: true,
+	saveUninitialized: true
+}));
+
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
